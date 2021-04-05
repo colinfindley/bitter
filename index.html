@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+    <title>Melody Rating</title>
+	
+
+	<script src="jspsych-6.0.2/jspsych.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/jquery-3.3.1.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script type="text/javascript" src="lib/vendors/jquery-2.2.0.min.js"></script>
+	<script type="text/javascript" src="lib/vendors/jspsych-6.0.0/jspsych.js"></script>
+	<script type="text/javascript" src="lib/jspsych-pavlovia-3.0.0.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-audio-keyboard-response.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-image-button-response.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-audio-button-response.js"></script>
+    <script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-html-keyboard-response.js"></script>
+    <script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-html-button-response.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-html-slider-response.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-fullscreen.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-external-html.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-survey-text.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-survey-likert.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-survey-multi-choice.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-call-function.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-free-sort.js"></script>
+	<script type="text/javascript" src="jspsych-6.0.2/plugins/jspsych-survey-multi-select.js"></script>
+
+
+
+
+	<!-- Include base CSS (optional) -->
+
+<!-- Include Choices CSS -->
+<link rel="stylesheet" href="public/assets/styles/choices.min.css" />
+<!-- Include Choices JavaScript -->
+<script src="/public/assets/scripts/choices.min.js"></script>
+
+
+    <link href="jspsych-6.0.2/css/jspsych.css" rel="stylesheet" type="text/css" />
+
+  </head>
+  <body></body>
+  <script>
+
+
+/**************/
+/** TIMELINE **/
+/**************/
+
+var timeline = [];
+
+
+/***********************/
+/** PAVLOVIA COMMANDS **/
+/***********************/
+
+ var pavlovia_init = {
+	type: "pavlovia",
+	command: "init"
+	};
+
+var pavlovia_finish = {
+	type: "pavlovia",
+	command: "finish"
+	};
+ 
+
+/*************/
+/** CONSENT **/
+/*************/
+
+//function to make sure consent box is clicked before proceeding
+var check_consent = function(elem) {
+  if ($('#consent_checkbox').is(':checked')) {
+    return true;
+  }
+  else {
+    alert("If you wish to participate, you must check the box next to the statement 'I agree to take part in this study.'");
+    return false;
+  }
+  return false;
+};
+//CONSENT TRIAL
+var consent_trial = {
+  type:"external-html",
+  url: "consent/consent.html", 
+  cont_btn: "start",
+  check_fn: check_consent
+};	  
+
+var prolific_id = {
+	type: "survey-text",
+	questions: [{prompt: "Please enter your Prolific ID"}],
+	on_finish: function(data) {
+		var prolific_id = JSON.parse(jsPsych.data.get().last(1).values()[0].responses).Q0
+		jsPsych.data.addProperties({prolific_id: prolific_id});
+
+	}
+
+}
+
+//Assign Condition (1 = triads 2 = modulations) and add to data
+
+
+
+/*define subject ID and add it to data output*/	  
+
+
+var identifier = Math.random().toString(36).substring(7);
+jsPsych.data.addProperties({rand_id: identifier});
+/*define welcome message trial */
+	  var welcome = {
+		  type: "html-keyboard-response",
+		  stimulus: "Welcome to the study. Press any key to begin."
+	  };
+
+
+// Full Screen 
+
+var fullscreen = {
+  type: 'fullscreen',
+  fullscreen_mode: true,
+  message: '<p>Please complete the rest of the experiment in full screen mode. Your browser window will switch to full screen mode when you press the button below</p>'
+};
+
+/**************************/
+/** VOLUME AND HEADPHONE **/
+/**************************/
+
+//instructions	
+
+
+var volume_check_inst1 = {
+      type: 'html-keyboard-response',
+      stimulus: "<p>Before we begin the main task, you will complete a short volume calibration and headphone check.</p><p>" +
+	  "Please make sure you are in a quiet listening environment, that you are wearing headphones, and that your computer's volume is turned on.<p></p>" +
+	  "<p></p>(Press SPACEBAR to continue)",
+	  choices: [' '],
+	  post_trial_gap: 250
+    };
+	
+var volume_check_inst2 = {
+      type: 'html-keyboard-response',
+      stimulus: "<p>The volume calibration will be first.</p><p>" +
+	  "You will hear a thirty-second noise. Please adjust your computer's volume so that this noise is being presented at a comfortable level.<p></p>" +
+	  "<p></p>(Press SPACEBAR to listen)",
+	  choices: [' '],
+	  post_trial_gap: 250
+    };
+// volume level screen - 30-second brown noise should be adjusted to a comfortable level by participants
+var volume_check = {	
+	type: 'audio-button-response',
+	stimulus: 'audCalib/volumetest.mp3',
+    choices: ['I am ready to continue.'],
+    prompt: "<p>Adjust your volume so that the noise is being played at a comfortable level.</p>"+
+	"<p></p>Press the button whenever you are ready to continue.",
+    response_ends_trial: true,
+	trial_duration: 30000
+	};
+// push to experiment timeline
+var volume_adjust = {timeline:[volume_check_inst1, volume_check_inst2, volume_check]};
+// short test to check whether participants are wearing headphones headphone check 
+var headphone_check_inst = {
+	type: 'html-keyboard-response',
+      stimulus: "<p>You will now complete a short headphone check.</p><p>" +
+	  "On each trial, you will hear three tones. One of these tones will be quieter than the others. Your task is to identify whether the quiet tone occurred first, second, or third.</p><p>" + 
+	  "There are six trials in total.<p></p>" +
+	  "<p></p>(Press SPACEBAR to begin)",
+	  choices: [' '],
+	  post_trial_gap: 250
+    };
+var headphone_proc = {
+    timeline: [
+        {
+            type: 'html-keyboard-response',
+            stimulus: '<div style="font-size:60px;">+</div>',
+            choices: jsPsych.NO_KEYS,
+            trial_duration: 500
+        },
+        {
+            type: 'audio-button-response',
+            stimulus: jsPsych.timelineVariable('headphone_stim'),
+            prompt: "<p>Which tone was the quietest?</p>",
+            choices: ['first', 'second', 'third'],
+			data: { correctRESP: jsPsych.timelineVariable('correctRESP') },
+            on_finish: function(data){
+    if(data.button_pressed == data.correctRESP){
+      data.correct = 1;
+    } else {
+      data.correct = 0;
+    }
+	jsPsych.data.addDataToLastTrial({
+		designation: "headphone-test"
+		});	
+  }
+       },
+	   
+{
+  type: 'html-keyboard-response',
+  trial_duration: 500,
+  stimulus: function(){
+    var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+    if(last_trial_correct){
+      return "<p>Correct</p>";
+    } else {
+      return "<p>Incorrect</p>";
+    }
+  }
+}	   
+    ],
+    timeline_variables: [
+        { headphone_stim: 'audCalib/t1_1.mp3', correctRESP: 0 },
+		{ headphone_stim: 'audCalib/t1_2.mp3', correctRESP: 0 },
+		{ headphone_stim: 'audCalib/t2_1.mp3', correctRESP: 1 },
+		{ headphone_stim: 'audCalib/t2_2.mp3', correctRESP: 1 },
+		{ headphone_stim: 'audCalib/t3_1.mp3', correctRESP: 2 },
+		{ headphone_stim: 'audCalib/t3_2.mp3', correctRESP: 2 }
+    ],
+	randomize_order: true
+};
+// push the headphone check to experiment timeline
+var headphone_check = {timeline: [headphone_check_inst, headphone_proc]};
+/*********************************/
+/** MAIN VARIABLE RANDOMIZATION **/
+/*********************************/  
+
+/*randomly assign tempo/melody combination, append to data*/
+
+var tempo_lists = ['40','60','80', '100', '120'];
+var melody_lists = ['melody_01', 'melody_02', 'melody_03', 'melody_04', 'melody_05', 'melody_06', 'melody_07'];
+
+/*define audio and preload files */
+
+var audio_files = ['b02.mp3', 'b04.mp3', 'b07.mp3'];
+var filePaths = [];
+var harmonizations = []
+var numFiles = audio_files.length;
+//Randomize the melodies (clunky method but it works)
+
+//Randomize tempos
+shuffleArray(tempo_lists);
+
+//Initialize tempo counter
+var counter_tempo = 0;
+
+
+//create shuffle array function
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
+
+/*add the remaining audio files to filePaths for preloading*/
+
+filePaths.push('audCalib/attnchk.mp3', 'audCalib/t1_1.mp3', 'audCalib/t1_2.mp3', 'audCalib/t2_1.mp3', 'audCalib/t2_2.mp3', 'audCalib/t3_1.mp3', 'audCalib/t3_2.mp3', 'audCalib/volumetest.mp3');
+		
+	
+/************************/
+/** TIMELINE VARIABLES **/
+/************************/
+		
+/* define sound arrays for the trials*/		
+
+tempo_40 = [filePaths[0], filePaths[1], filePaths[2]];
+tempo_60 = [filePaths[3], filePaths[4], filePaths[5]];
+tempo_80 = [filePaths[6], filePaths[7], filePaths[8]];
+tempo_100 = [filePaths[9], filePaths[10], filePaths[11]];
+tempo_120 = [filePaths[12], filePaths[13], filePaths[14]];
+
+
+
+//In between trials
+var fixation = {
+  type: 'html-keyboard-response',
+  stimulus: '',
+  choices: jsPsych.NO_KEYS,
+  trial_duration: 10,
+  on_finish: 
+	function()
+	{
+		for (i = 0; i < audio_files.length; i++)
+		{
+			harmonizations.splice(i, i+3, tempo_lists[counter_tempo] + '/' + melody_lists[0] + '/' + audio_files[i])
+		}
+		jsPsych.randomization.shuffle(harmonizations);
+		shuffleArray(harmonizations);
+		shuffleArray(melody_lists)
+		counter_tempo++;
+		console.log(harmonizations);
+		numSound = 0;
+	}
+	
+}
+
+
+/************************/
+/** MAIN TRIAL SCREENS **/
+/************************/
+					
+
+/*instructions*/
+var instructions_02 = {
+	type: "html-button-response",
+	stimulus: "<p>Please listen to and rate the following seven sound samples. </p><p>When you are ready to listen to the sound samples, press the button labeled 'Begin'</p>",
+		choices: ['Begin'],
+		post_trial_gap: 250
+					};
+
+/* define the music presentation trial */
+
+
+
+// Define Rating Trials 
+
+/* define liking trial separately (always comes at the end of the procedure */
+
+// add data about how many times button was clicked
+
+
+
+
+var bittersweet_trial = 
+{
+	type: "html-button-response",
+	stimulus: "<p>Press the top row of buttons to listen to the samples to determine which sounds most bittersweet.<br> Please listen to all three samples before making a decision.</p>" +
+	"<p><input class='jspsych-btn' style='background-color:powderblue;' id='BA' type='button' value='Play sample 1' onclick='playBA()'><audio id='playerBA' src=''></audio></input>&nbsp&nbsp" +
+	"<input class='jspsych-btn' style='background-color:powderblue;' id='BA' type='button' value='Play sample 2' onclick='playBA_1()'><audio id='playerBA' src=''></audio></input>&nbsp&nbsp" +
+	"<input class='jspsych-btn' style='background-color:powderblue;' id='BA' type='button' value='Play sample 3' onclick='playBA_2()'><audio id='playerBA' src=''></audio></input></p><br><br>" +
+	"<br>Which sample was most bittersweet?<br><br>",
+	choices: ['1', '2', '3'],
+	post_trial_gap: 250
+};
+
+
+
+
+function playBA() {
+	var playBA = harmonizations[0];
+	var audio = document.getElementById('playerBA');
+	document.getElementById('playerBA').src = playBA;	
+	audio.play(); //this actually plays the file	
+	//Log the button press in an ongoing array for the trial
+	numSound += 1;
+};
+
+function playBA_1() {
+	var playBA = harmonizations[1];
+	var audio = document.getElementById('playerBA');
+	document.getElementById('playerBA').src = playBA;	
+	audio.play(); //this actually plays the file	
+	//Log the button press in an ongoing array for the trial
+	numSound += 1;
+};
+
+function playBA_2() {
+	var playBA = harmonizations[2];
+	var audio = document.getElementById('playerBA');
+	document.getElementById('playerBA').src = playBA;	
+	audio.play(); //this actually plays the file	
+	//Log the button press in an ongoing array for the trial
+	numSound += 1;
+};
+
+var numSound = 0;
+var numTrial = 1;
+
+var liking = {
+	type: "html-slider-response",
+	stimulus: '<div style="width:500px;"><p>How much did you <em>like</em> this melody?</p></div>',
+	labels: ['not at all', 'slightly', 'moderately', 'extremely'],
+	response_ends_trial: true,
+	slider_width: 500,
+	data: {term: 'liking', harmony: jsPsych.timelineVariable('type')}
+				};
+	
+		
+/**************************/
+/** DEFINE THE PROCEDURES**/
+/**************************/
+
+//Create new button trial
+
+var procedure_harmonies = {
+		timeline: [fixation, bittersweet_trial, fixation, bittersweet_trial, fixation, bittersweet_trial, fixation, bittersweet_trial, fixation, bittersweet_trial],
+		randomize_order:false,
+	};
+	
+/****************************/
+/** SHORT ATTENTION CHECKS **/
+/****************************/
+
+var audchk = {
+	type: 'audio-keyboard-response',
+	stimulus: 'audCalib/attnchk.mp3',
+	choices: [' '],
+	trial_duration: 8000,
+	response_ends_trial: true,
+	on_finish: function(data){
+		if (data.rt == null) {
+			var audCheck = 0;
+		} else {
+			var audCheck = 1;
+		}
+	jsPsych.data.addDataToLastTrial({
+			  AUD_PASS: audCheck
+            });	
+	}
+}
+var vischk = {
+	type: 'survey-multi-choice',
+	questions: [{prompt: "For data quality purposes, please select 'happy' from the choices below.", options: ['sad', 'happy', 'calm', 'angry']}],
+	on_finish: function(data){
+		var visattn = JSON.parse(jsPsych.data.get().last(1).values()[0].responses).Q0; 
+		if (visattn == 'happy') {
+		var visCheck = 1
+		} else {
+		var visCheck = 0
+		}
+		
+		jsPsych.data.addDataToLastTrial({
+			  VIS_PASS: visCheck
+            });	
+	}
+}
+/*************************/
+/** SHORT QUESTIONNAIRE **/
+/*************************/
+
+
+// Questionaire Scales
+
+var scale_education = ['No schooling', 'Elementary school (incomplete)', 'Elementary school', 'High school (incomplete)', "High school", "Undergraduate degree (incomplete)", "Undergraduate degree", "Master's degree", "Professional/Doctoral degree"];
+var scale_gender = [" A woman", " A man", " Non-binary", "You do not have an option that describes me."]; //gender options
+var scale_ethnicity = ['White', 'Hispanic origin', 'Black or African American', 'Native American', 'Native Hawaiian or Other Pacific Islander', 'Asian', 'Other'];
+var genre = ['Rap/Hip Hop', 'Classical', 'Metal', 'Jazz', 'Rock', 'Electronic Dance Music', 'Pop', 'Other' ]
+var scale_1 = [
+  "Never", 
+  "Infrequently", 
+  "Somewhat frequently", 
+  "Frequently",  
+  "Very frequently"
+];
+
+
+
+//Start of survey 
+
+var interim = {
+  type: "html-keyboard-response",
+  stimulus: "<p>Thank you for your responses.</br></br>You will now answer some basic musical background questions.</p><p>Press any key to continue.</p>"
+};
+
+var questionnaire_gender = {
+type: 'survey-multi-choice',
+preamble: [''],
+questions: [{prompt: "In terms of gender, I identify as...", options: scale_gender}],
+on_finish: function(data){
+	GENDER = JSON.parse(jsPsych.data.get().last(1).values()[0].responses).Q0; 
+	if (GENDER == "You do not have an option that describes me.") {
+		gender_clarify = 1;
+	} else {
+		gender_clarify = 0;
+	}
+		jsPsych.data.addDataToLastTrial({
+			  Gender : gender_clarify
+            });	
+  }
+};
+
+
+var questionnaire_gender_followup = {
+  type: 'survey-text',
+  questions: [{prompt: "Please briefly describe your gender identity if you wish."}],
+  preamble: ['']
+};
+
+
+var if_gender_clarify_node = {
+    timeline: [questionnaire_gender_followup],
+    conditional_function: function(){
+        if(gender_clarify == 1){
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
+
+var qR = {
+	type: 'survey-multi-select',
+	questions: [
+	{
+		prompt: "Please specify your ethnicity" , 
+		options: scale_ethnicity,
+		required: true,
+		name: 'ethnicity'
+	}],	
+
+	preamble: ['<b> Please answer the following questions to the best of your ability.</b>'],
+	
+};
+
+var qSES = {
+	type: 'survey-multi-choice',
+	questions: [
+	{
+		prompt: "What is your highest level of education received?" , 
+		options: scale_education}],
+};
+
+var qIO = {
+	type: 'survey-text',
+  	questions: [{prompt: "How old are you? <br><em>(in years)</em>", rows:1, columns: 10, value:''},{prompt: "What is your occupation? <br>", rows:1, columns: 60, value:''}, {prompt: "What is your yearly income?<br><em>(in U.S. dollars)</em>", rows:1, columns: 30, value:''} ],
+}; 
+
+
+/*musician q's*/
+var qM = {
+	type: 'survey-multi-choice',
+	questions: [{prompt: '<br>Have you ever played a musical instrument, including vocal training?', options: [' Yes', ' No']}, {prompt: 'Do you consider yourself a musician?', options: [' Yes', ' No']}],
+	preamble: ['<b> Please answer the following musical background questions to the best of your ability.</b>'],
+};
+
+var qM2 = {
+  type: 'survey-text',
+  questions: [//{prompt: '<br>Have you ever played a musical instrument, including vocal training? (Y/N)', rows:1, columns: 5, value:''}, 
+  			  {prompt: 'How many years have you played your instrument? <br>  <em> (if multiple, choose the time that has passed since you learned your first instrument)</em>', columns: 2},
+			  //{prompt: 'Do you consider yourself a musician? (Y/N)',rows:1, columns: 5, value:''},
+			  {prompt: 'How many hours a day do you spend listening to music?', columns: 2}
+			  
+			  ],
+  preamble: ['<b>Please answer the following questions to the best of your ability.</b>'],
+ // check_fn: check_answered
+};
+
+/*genres*/
+
+var likert_page = {
+  type: 'survey-likert',
+  scale_width: 1000,
+  questions: [
+    {prompt: "Rap/Hip Hop.", name: 'rap', labels: scale_1},
+    {prompt: 'Classical', name: 'classical', labels: scale_1},
+    {prompt: 'Rock', name: 'rock', labels: scale_1},
+    {prompt: 'Metal', name: 'metal', labels: scale_1},
+    {prompt: 'Jazz', name: 'jazz', labels: scale_1},
+	{prompt: 'Pop', name: 'pop', labels: scale_1},
+	{prompt: 'Electronic Dance Music', name: 'edm', labels: scale_1},
+	{prompt: 'Other', name: 'other', labels: scale_1}
+
+  ],
+  preamble: ['<b><div style = "padding: 30px;"> Please estimate the frequency that you listen to the following genres.</b>'],
+  randomize_question_order: true,
+};
+
+/*exemplar recordings for each category*/
+var qE = {
+  type: 'survey-text',
+  questions: [
+			  {prompt: 'Song title and artist', rows:1, columns: 60, value:''},
+			  ],
+  preamble: ['<p>In this study, you assessed the extent to which each melody represented certain emotions.' +
+   			" Using the space provided below, list a single piece of music (outside of this study) that you most strongly associate with bittersweetness:</p>" 
+   ] 
+};
+
+/************************/
+/** FINAL LANDING PAGE **/
+/************************/
+
+/*reference ID for mturk */ 
+
+var idcode = {
+  type: "html-keyboard-response",
+  choices: jsPsych.NO_KEYS,
+  stimulus: '<p>Thank you for participating. Here is your unique code: 88E88884</p>' +
+  '<p>Please copy this code exactly as it appears. This is what you must enter in Prolific to receive payment.' +
+  '<p>Once you have copied the code, you may exit out of this tab and return to Prolific.</p>'
+};
+/*************************************/
+/** Push Everything to the Timeline **/
+/*************************************/
+
+//timeline.push(pavlovia_init);
+
+timeline.push(consent_trial);
+timeline.push(prolific_id);
+timeline.push(welcome);
+timeline.push(volume_adjust);
+timeline.push(headphone_check);
+timeline.push(instructions_02);
+timeline.push(procedure_harmonies);
+timeline.push(audchk);
+timeline.push(interim);
+
+//Music Background
+timeline.push(qM);
+timeline.push(qM2);
+timeline.push(likert_page);
+
+// Songs that fit emotional keywords
+timeline.push(qE);
+//Checks and mturk code
+timeline.push(vischk);
+timeline.push(idcode);
+//timeline.push(pavlovia_finish);
+/*********************/
+/** INITIALIZE EXPT **/
+/*********************/
+
+ jsPsych.init ({
+	timeline: timeline,
+	 preload_audio: filePaths
+});
+
+	  </script>
+</html>
